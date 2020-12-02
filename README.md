@@ -32,7 +32,7 @@ allocator.mem_alloc(64);
 allocator.mem_dump();
 ```
 
-Result : ![alt text](img/1.png)   
+![alt text](img/1.png)   
 
 Allocate block with size bigger than half of page
 ```
@@ -43,7 +43,7 @@ allocator.mem_dump();
 
 ```
 
-Result : ![alt text](img/2.png)   
+![alt text](img/2.png)   
 
 
 #### Memory Free
@@ -68,7 +68,7 @@ allocator.mem_free(ind3);
 allocator.mem_free(ind4);
 ```
 
-Result : ![alt text](img/4.png)   
+![alt text](img/4.png)   
 
 #### Realloc
 
@@ -90,4 +90,4 @@ allocator.mem_dump();
 allocator.mem_realloc(64, block2);
 allocator.mem_dump();
 ```
-Result : ![alt text](img/5.png)   
+![alt text](img/5.png)   
