@@ -87,7 +87,6 @@ namespace PageMemoryAllocator
         public void mem_free(int index)
         {
             int currentPage = index / PageSize;
-            var emptyDescriptor = new byte[12];
             var currentPageDescriptor = Desciptors.Slice(currentPage * DescriptorSize, DescriptorSize);
             int currentPageFreeBlocks = currentPageDescriptor.Slice(4, 4).ToInt();
             int currentPageBlockSize = currentPageDescriptor.Slice(8, 4).ToInt();
@@ -98,26 +97,16 @@ namespace PageMemoryAllocator
                 for (int i = 0; i < pagesOfCurrentBlock.Count; i++)
                 {
                     int pagesCount = pagesOfCurrentBlock[i];
-                    Array.Copy(emptyDescriptor, 0, Desciptors, pagesCount * DescriptorSize, DescriptorSize);
+                    Array.Copy(new byte[12], 0, Desciptors, pagesCount * DescriptorSize, DescriptorSize);
                     FreePages++;
                 }
                 for (int i = 0; i < pagesOfCurrentBlock.Count; i++)
                     UnregisterPageInDictionary(pagesOfCurrentBlock[0]);
             }
-            else if (currentPageFreeBlocks == 0)
-            {
-                var newFirstEmptyBlock = index.ToByteArray();
-                Array.Copy(newFirstEmptyBlock, 0, Desciptors, currentPage * DescriptorSize, 4);
-                var pages = new List<int>();
-                pages.Add(currentPage);
-                DictionarySizePages.Remove(currentPageBlockSize);
-                DictionarySizePages.Add(currentPageBlockSize, pages);
-                AddToDescriptorCountValue(currentPage, 1);
-            }
-            else if (currentPageFreeBlocks + 1 == PageSize / currentPageBlockSize)
+            else if (currentPageFreeBlocks == PageSize / currentPageBlockSize - 1)
             {
                 DictionarySizePages.Remove(currentPageBlockSize);
-                Array.Copy(emptyDescriptor, 0, Desciptors, currentPage * DescriptorSize, 12);
+                Array.Copy(new byte[12], 0, Desciptors, currentPage * DescriptorSize, 12);
                 FreePages++;
             }
             else
@@ -215,8 +204,8 @@ namespace PageMemoryAllocator
             allocator.mem_alloc(512);
             allocator.mem_dump();
 
-            //allocator.mem_realloc(64, block2);
-            //allocator.mem_dump();
+            allocator.mem_realloc(64, block2);
+            allocator.mem_dump();
         }
     }
 }
