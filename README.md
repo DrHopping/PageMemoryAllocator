@@ -1,25 +1,22 @@
 # Page Memory Allocator
 Here is presented my C# implementation of **Page Memory Allocator** . 
-All memory available to the allocator is divided into pages. The page size can be from 4 KB to several megabytes. All pages have the same size.
-Information about pages stored in a **Descriptor**. This of descriptor is 12 bytes
-Structure of descriptor: 
+Memoty in the allocator divided into serveral types of pages. All pages have the same size. Number of pages can be calculated by formula ``MemorySize / PageSize``
+**Descriptor** is a sctructure that stores information about pages. Descriptor consists of 12 bytes.
 - [0-4] - index of next free block
 - [4-8] - number of free blocks
 - [8-12] - size of block
 
-Pages is divided into 2 groups:
-- Divided into blocks of the same size
-- Used for allocating a block of memory bigger than half of the page
+Pages is divided into 2 types:
+- Pages that divided into blocs of the same size
+- Pages that occupied by block that bigger than half of the page
 
-The first group in turn is divided into classes.
-A class is determined by the size of the blocks in the page.
-If block of the memory that should be allocated is not a power of two,
-then the size of the block is equal to the next power of two.
+First type of pages divided into classes. Class determine what size of blocks can be stored in the page.
+If desired allocation size is not a power of 2, its casts to nearest power of two that bigger than it.
 
  
 ## Examples
 #### Allocation 
-Allocate block with size than half of page
+Allocate block with ``AllocationSize < PageSize / 2``
 
 ```
 Allocator allocator = new Allocator();
@@ -34,7 +31,7 @@ allocator.mem_dump();
 
 ![alt text](img/1.png)   
 
-Allocate block with size bigger than half of page
+Allocate block with ``AllocationSize > PageSize / 2``
 ```
 Allocator allocator = new Allocator();
 allocator.mem_alloc(1024);
@@ -85,7 +82,7 @@ allocator.mem_dump();
 ```
 ![alt text](img/3.png)   
 
-
+Reallocate
 ```
 allocator.mem_realloc(64, block2);
 allocator.mem_dump();
