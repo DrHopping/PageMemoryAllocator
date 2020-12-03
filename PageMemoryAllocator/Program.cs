@@ -15,18 +15,18 @@ namespace PageMemoryAllocator
 
     public class Allocator
     {
-        private const int MemorySize = 4096;
-        private const int PageSize = 1024;
+        private const int MemorySize = 2048;
+        private const int PageSize = 512;
         private const int DescriptorSize = 12;
 
         private byte[] Desciptors { get; set; } // 0-4 - Next free block, 4-8 - Number of free blocks, 8-12 - Block size
         private byte[] Memory { get; set; }
-        private Dictionary<int, List<int>> Dictionary { get; set; }
+        private Dictionary<int, List<int>> DictionarySizePages { get; set; }
         private int FreePages { get; set; }
 
         public Allocator()
         {
-            Dictionary = new Dictionary<int, List<int>>();
+            DictionarySizePages = new Dictionary<int, List<int>>();
             FreePages = MemorySize / PageSize;
             Desciptors = new byte[MemorySize / PageSize * DescriptorSize];
             Memory = new byte[MemorySize];
@@ -40,20 +40,20 @@ namespace PageMemoryAllocator
 
             if (allocationSize > PageSize / 2 && FreePages * PageSize >= allocationSize)
             {
-                int firstNonDividedPage = EmptyPage();
+                int firstEmptyPage = EmptyPage();
                 for (int i = 0; i < allocationSize / PageSize; i++)
                 {
-                    int nonDividedPage = EmptyPage();
-                    CreateDescriptor(nonDividedPage, 1, allocationSize);
-                    RegisterPageInDictionary(allocationSize, nonDividedPage);
+                    int emptyPage = EmptyPage();
+                    CreateDescriptor(emptyPage, 1, allocationSize);
+                    RegisterPageInDictionary(allocationSize, emptyPage);
                     FreePages--;
                 }
-                return firstNonDividedPage * PageSize;
+                return firstEmptyPage * PageSize;
             }
             else if (allocationSize > PageSize / 2 && FreePages * PageSize < allocationSize) return -1;
 
 
-            var pages = Dictionary.GetValueOrDefault(allocationSize);
+            var pages = DictionarySizePages.GetValueOrDefault(allocationSize);
             if(pages == null || pages.Count == 0)
             {
                 int emptyPage = EmptyPage();
@@ -94,7 +94,7 @@ namespace PageMemoryAllocator
 
             if(currentPageFreeBlocks == 0 && currentPageBlockSize >= PageSize)
             {
-                var pagesOfCurrentBlock = Dictionary.GetValueOrDefault(currentPageBlockSize);
+                var pagesOfCurrentBlock = DictionarySizePages.GetValueOrDefault(currentPageBlockSize);
                 for (int i = 0; i < pagesOfCurrentBlock.Count; i++)
                 {
                     int pagesCount = pagesOfCurrentBlock[i];
@@ -110,13 +110,13 @@ namespace PageMemoryAllocator
                 Array.Copy(newFirstEmptyBlock, 0, Desciptors, currentPage * DescriptorSize, 4);
                 var pages = new List<int>();
                 pages.Add(currentPage);
-                Dictionary.Remove(currentPageBlockSize);
-                Dictionary.Add(currentPageBlockSize, pages);
+                DictionarySizePages.Remove(currentPageBlockSize);
+                DictionarySizePages.Add(currentPageBlockSize, pages);
                 AddToDescriptorCountValue(currentPage, 1);
             }
             else if (currentPageFreeBlocks + 1 == PageSize / currentPageBlockSize)
             {
-                Dictionary.Remove(currentPageBlockSize);
+                DictionarySizePages.Remove(currentPageBlockSize);
                 Array.Copy(emptyDescriptor, 0, Desciptors, currentPage * DescriptorSize, 12);
                 FreePages++;
             }
@@ -134,9 +134,8 @@ namespace PageMemoryAllocator
             int page = index / PageSize;
             var desciptorOfBlock = Desciptors.Slice(page * DescriptorSize, DescriptorSize);
             int blockSize = desciptorOfBlock.Slice(8, 4).ToInt();
-
-            if (blockSize == 0) return mem_alloc(size);
-            else { mem_free(index); return mem_alloc(size); }
+            mem_free(index); 
+            return mem_alloc(size); 
         }
         public void mem_dump()
         {
@@ -180,19 +179,19 @@ namespace PageMemoryAllocator
 
         private void RegisterPageInDictionary(int blockSize, int page)
         {
-            var pages = Dictionary.GetValueOrDefault(blockSize);
+            var pages = DictionarySizePages.GetValueOrDefault(blockSize);
             if (pages == null)
             {
                 pages = new List<int>();
                 pages.Add(page);
-                Dictionary.Add(blockSize, pages);
+                DictionarySizePages.Add(blockSize, pages);
             }
             else if (!pages.Contains(page)) pages.Add(page);
         }
 
         private void UnregisterPageInDictionary(int page)
         {
-            foreach (var pair in Dictionary)
+            foreach (var pair in DictionarySizePages)
                 pair.Value.Remove(page);
         }
 
@@ -207,7 +206,17 @@ namespace PageMemoryAllocator
     {
         static void Main(string[] args)
         {
-            //Allocator allocator = new Allocator();
+            Allocator allocator = new Allocator();
+            int block1 = allocator.mem_alloc(128);
+            int block2 = allocator.mem_alloc(128);
+            int block3 = allocator.mem_alloc(128);
+            allocator.mem_alloc(128);
+            allocator.mem_alloc(128);
+            allocator.mem_alloc(512);
+            allocator.mem_dump();
+
+            //allocator.mem_realloc(64, block2);
+            //allocator.mem_dump();
         }
     }
 }
